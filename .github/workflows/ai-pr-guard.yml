@@ -1,0 +1,42 @@
+# AI PR guard (DeepChem-AI fork only; not part of upstream DeepChem).
+# Screens every pull request for things that must not be merged without the
+# fork owner's sign-off: see AI_CONTRIBUTING.md.
+#
+# Why pull_request_target: it runs THIS file and the guard script from the
+# base branch, so a pull request cannot edit its own guard. That trigger is
+# dangerous when PR code is checked out or run. This workflow never does that:
+# it checks out only the base branch and reads the PR as data from the API,
+# with a read-only token and no secrets. Do not add a checkout of the PR head,
+# a write permission or a secret to this file.
+name: AI PR guard
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+permissions:
+  contents: read
+  pull-requests: read
+concurrency:
+  group: ai-pr-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  guard:
+    if: github.repository == 'xX-its-amit-Xx/DeepChem-AI'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the guard from the base branch (never the PR)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Fetch the pull request as data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --paginate --slurp > "$RUNNER_TEMP/files.json"
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" > "$RUNNER_TEMP/pr.json"
+      - name: Screen the pull request
+        run: |
+          set -o pipefail
+          python3 -I .github/scripts/ai_pr_guard.py "$RUNNER_TEMP/files.json" "$RUNNER_TEMP/pr.json" | tee -a "$GITHUB_STEP_SUMMARY"

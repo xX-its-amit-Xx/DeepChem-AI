@@ -1,0 +1,29 @@
+# Keeps this fork's master up to date with deepchem/deepchem (DeepChem-AI fork
+# only). Uses GitHub's own "Sync fork" operation, so no third-party action and
+# no secret is involved.
+#
+# It stops and shows a red run, for the owner to sync by hand, when:
+#  - upstream changed a file under .github/workflows/ (the built-in token is
+#    not allowed to push workflow changes), or
+#  - the merge conflicts with something changed only in this fork.
+# GitHub pauses scheduled workflows after 60 days without repository activity.
+name: Sync fork with upstream DeepChem
+on:
+  schedule:
+    - cron: '17 6 * * *' # daily, 06:17 UTC
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: sync-upstream
+jobs:
+  sync:
+    if: github.repository == 'xX-its-amit-Xx/DeepChem-AI'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Merge upstream master into this fork's master
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X POST "repos/$GITHUB_REPOSITORY/merge-upstream" -f branch=master | tee -a "$GITHUB_STEP_SUMMARY"
