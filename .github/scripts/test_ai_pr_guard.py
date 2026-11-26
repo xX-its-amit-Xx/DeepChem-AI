@@ -125,13 +125,13 @@ def test_network_and_secret_access_flagged():
 
 
 def test_hidden_unicode_blocks():
-    for ch in ('​', '‮', '⁦', '\U000e0041', '﻿'):
+    for ch in ('\u200b', '\u202e', '\u2066', '\U000e0041', '\ufeff'):
         f = run([code('+x = 1  # ok' + ch + 'hidden'), TEST_FILE])
         assert 'hidden characters' in msgs(f), repr(ch)
 
 
 def test_hidden_unicode_in_description_blocks():
-    assert 'hidden' in msgs(run([TEST_FILE], body=OK_BODY + '‍'))
+    assert 'hidden' in msgs(run([TEST_FILE], body=OK_BODY + '\u200d'))
 
 
 def test_prompt_injection_in_code_comment_blocks():
@@ -157,7 +157,7 @@ def test_hidden_html_comment_in_body_flagged():
 
 
 def test_suspicious_file_names_block():
-    for name in ('deepchem/feat/x‮.py', 'deepchem/fеat/x.py',
+    for name in ('deepchem/feat/x\u202e.py', 'deepchem/f\u0435at/x.py',
                  'deepchem/../setup.py'):
         f = run([code('+x = 1', name=name), TEST_FILE])
         assert 'suspicious file name' in msgs(f), repr(name)
