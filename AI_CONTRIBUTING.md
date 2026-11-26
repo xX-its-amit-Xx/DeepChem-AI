@@ -14,8 +14,10 @@ Rules are marked **In force** (true today, by practice or by a setting that is o
 6. Target the fork's default branch only.
 
 ## What is reviewed, and by whom
+**In force once merged to the default branch:** an automated screen, the AI PR guard (`.github/scripts/ai_pr_guard.py`, run by `.github/workflows/ai-pr-guard.yml`), reads every PR as data and never runs its code. It reports BLOCK (must be fixed) or OWNER (only the owner may approve) for: a missing authorship line; hidden or direction-changing characters; text addressed to an AI reviewer; pickled, binary, archive or weight files; unsafe loading (`pickle`, `torch.load` without `weights_only=True`); dynamic code execution, shell commands and encoded blobs; network, environment or credential access; new external links and install commands; deleted, skipped or weakened tests; library changes without a test; oversized changes; and any protected path. A green result is not approval: it is a screen, and the owner still reads the change. Upstream's own checks (tests, yapf, flake8, mypy) also run on PRs.
+
 **In force:** every PR is read by the fork owner before it is merged. Review by a second AI model may be added as extra signal; it never replaces the owner's review.
-**Planned (needs setting):** GitHub enforcing that rule (required approval, no force pushes) and automatic review requests for sensitive paths via CODEOWNERS.
+**Planned (needs setting):** GitHub enforcing these rules (required approval, the guard as a required check, no force pushes) and automatic review requests for sensitive paths via CODEOWNERS.
 
 ## Never merged automatically; always needs explicit owner approval
 - Anything under `.github/` (workflows), `setup.py`, `requirements/`, `docker/`, `scripts/`, packaging or build files.
@@ -32,3 +34,6 @@ Do not open a public PR or issue about it. Use GitHub's "Report a vulnerability"
 
 ## Not allowed
 Pushing to the default branch directly; opening PRs, issues or comments on upstream; adding secrets, tokens or keys; contributing private, lab-internal or unpublished material (this fork is public); autonomous merging.
+
+## Staying current with upstream
+`.github/workflows/sync-upstream.yml` merges deepchem/deepchem `master` into this fork's `master` daily. It stops for the owner when upstream changes a workflow file or the merge conflicts.
